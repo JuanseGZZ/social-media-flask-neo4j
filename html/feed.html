@@ -1,0 +1,347 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed</title>
+    <script>
+        async function verificarLogin() {
+            const cookie = localStorage.getItem("cookie");
+
+            if (!cookie) {
+                alert("No estás logueado. Redirigiendo al login...");
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                // Verificamos la cookie con el servidor
+                const respuesta = await fetch("http://127.0.0.1:5000/verificar", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ cookie }),
+                });
+
+                if (!respuesta.ok) {
+                    alert("Tu sesión ha expirado. Redirigiendo al login...");
+                    localStorage.removeItem("cookie");
+                    localStorage.removeItem("usuario");
+                    window.location.href = "login.html";
+                }
+            } catch (error) {
+                console.error("Error al verificar la sesión:", error);
+                alert("Hubo un problema al verificar tu sesión");
+            }
+        }
+
+        async function logout() {
+            const cookie = localStorage.getItem("cookie");
+
+            if (!cookie) {
+                alert("No estás logueado.");
+                return;
+            }
+
+            try {
+                // Enviamos la cookie al servidor para eliminarla
+                const respuesta = await fetch("http://127.0.0.1:5000/logout", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ cookie }),
+                });
+
+                if (respuesta.ok) {
+                    // Eliminamos la cookie del localStorage
+                    localStorage.removeItem("cookie");
+                    localStorage.removeItem("usuario");
+
+                    alert("Has cerrado sesión correctamente.");
+                    window.location.href = "login.html";
+                } else {
+                    alert("Hubo un problema al cerrar la sesión.");
+                }
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                alert("Error al conectar con el servidor.");
+            }
+        }
+
+        // Ejecutamos la verificación al cargar la página
+        window.onload = verificarLogin;
+    </script>
+</head>
+<body>
+    <h1>Hola Mundo</h1>
+    <button onclick="logout()">Cerrar Sesión</button>
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: row;
+            font-family: Arial, sans-serif;
+        }
+
+        #left-column {
+            width: 20%;
+            padding: 10px;
+            background-color: #f0f0f0;
+        }
+
+        #center-column {
+            width: 60%;
+            padding: 10px;
+        }
+
+        .user-card {
+            display: flex;
+            align-items: center;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            cursor: pointer;
+        }
+
+        .user-card:hover {
+            background-color: #f9f9f9;
+        }
+
+        .circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #ccc;
+            margin-right: 10px;
+        }
+
+        #post-area {
+            margin-bottom: 20px;
+        }
+
+        .post {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+
+        .post p {
+            margin: 5px 0;
+        }
+    </style>
+    <script>
+        async function verificarLogin() {
+            const cookie = localStorage.getItem("cookie");
+
+            if (!cookie) {
+                alert("No estás logueado. Redirigiendo al login...");
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                // Verificamos la cookie con el servidor
+                const respuesta = await fetch("http://127.0.0.1:5000/verificar", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ cookie }),
+                });
+
+                if (!respuesta.ok) {
+                    alert("Tu sesión ha expirado. Redirigiendo al login...");
+                    localStorage.removeItem("cookie");
+                    localStorage.removeItem("usuario");
+                    window.location.href = "login.html";
+                } else { // ta loged
+
+                }
+            } catch (error) {
+                console.error("Error al verificar la sesión:", error);
+                alert("Hubo un problema al verificar tu sesión");
+            }
+        }
+
+        async function logout() {
+            const cookie = localStorage.getItem("cookie");
+
+            if (!cookie) {
+                alert("No estás logueado.");
+                return;
+            }
+
+            try {
+                // Enviamos la cookie al servidor para eliminarla
+                const respuesta = await fetch("http://127.0.0.1:5000/logout", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ cookie }),
+                });
+
+                if (respuesta.ok) {
+                    // Eliminamos la cookie del localStorage
+                    localStorage.removeItem("cookie");
+                    localStorage.removeItem("usuario");
+
+                    alert("Has cerrado sesión correctamente.");
+                    window.location.href = "login.html";
+                } else {
+                    alert("Hubo un problema al cerrar la sesión.");
+                }
+            } catch (error) {
+                console.error("Error al cerrar sesión:", error);
+                alert("Error al conectar con el servidor.");
+            }
+        }
+
+        // Ejecutamos la verificación al cargar la página
+        window.onload = verificarLogin;
+
+        async function loadFeed() {
+            const username = localStorage.getItem("usuario");
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/feed?user=${username}`);
+                if (!response.ok) throw new Error("Error al cargar el feed");
+
+                const data = await response.json();
+
+                // Mostrar usuario principal
+                const userDiv = document.getElementById("current-user");
+                userDiv.innerHTML = `
+            <div class="user-card">
+                <div class="circle"></div>
+                <span>${data.currentUser.name} ${data.currentUser.surname} (@${data.currentUser.username})</span>
+            </div>
+        `;
+
+                // Mostrar recomendaciones
+                const recommendationsDiv = document.getElementById("recommendations");
+                recommendationsDiv.innerHTML = "";
+                data.recommendations.forEach(user => {
+                    recommendationsDiv.innerHTML += `
+                <div class="user-card" onclick="goToProfile('${user.username}')">
+                    <div class="circle"></div>
+                    <span>${user.name} ${user.surname}</span>
+                </div>
+            `;
+                });
+            } catch (error) {
+                console.error("Error al cargar el feed:", error);
+                alert("Hubo un problema al cargar el feed.");
+            }
+        }
+
+
+        // Redirigir al perfil del usuario
+        function goToProfile(username) {
+            window.location.href = `profile.html?user=${username}`;
+        }
+
+        // Publicar contenido
+        async function postContent(event) {
+            event.preventDefault();
+
+            const username = localStorage.getItem("usuario");
+            const content = document.getElementById("post-content").value;
+
+            const response = await fetch("http://127.0.0.1:5000/post", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ user: username, content }),
+            });
+
+            if (response.ok) {
+                alert("¡Publicación creada con éxito!");
+                document.getElementById("post-content").value = ""; // Limpiar el área de texto
+            
+            } else {
+                alert("Hubo un problema al publicar.");
+            }
+        }
+
+        async function loadPosts() {
+            const username = localStorage.getItem("usuario");
+
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/posts?user=${username}`);
+                if (!response.ok) throw new Error("Error al cargar los posts");
+
+                const posts = await response.json();
+                console.log("Posts recibidos:", posts);
+
+                const postsDiv = document.getElementById("posts");
+                postsDiv.innerHTML = ""; // Limpiar contenido previo
+
+                posts.forEach(post => {
+                    postsDiv.innerHTML += `
+                <div class="post">
+                    <p><strong>${post.author_name} ${post.author_surname} (@${post.author_username}):</strong></p>
+                    <p>${post.content}</p>
+                    <p><em>${new Date(post.date).toLocaleString()}</em></p>
+                    <hr>
+                </div>
+            `;
+                });
+            } catch (error) {
+                console.error("Error al cargar los posts:", error);
+                alert("Hubo un problema al cargar los posts.");
+            }
+        }
+
+        window.onload = async function () {
+            await verificarLogin();  // Verificar la sesión
+            await loadFeed();        // Cargar usuario y recomendaciones
+            await loadPosts();       // Cargar posts
+        };
+
+
+
+    </script>
+</head>
+
+<body>
+    <!-- Columna izquierda -->
+    <div id="left-column">
+        <div id="current-user"></div>
+        <h3>Recomendaciones</h3>
+        <div id="recommendations"></div>
+    </div>
+
+    <!-- Columna central -->
+    <div id="center-column">
+        <div id="post-area">
+            <h3>Crear publicación</h3>
+            <form onsubmit="postContent(event)">
+                <textarea id="post-content" rows="3" cols="50" placeholder="¿Qué estás pensando?"></textarea><br>
+                <button type="submit">Postear</button>
+            </form>
+        </div>
+        <div id="posts-area">
+            <h3>Últimos Posts</h3>
+            <div id="posts"></div>
+        </div>
+    </div>
+</body>
+
+</html>

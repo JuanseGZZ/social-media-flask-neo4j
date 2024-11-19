@@ -1,0 +1,68 @@
+
+    body {
+        font-family: Arial, sans-serif; /* Fuente moderna y legible */
+        background-color: #f4f4f9; /* Color de fondo suave */
+        margin: 0;
+        padding: 20px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+    }
+
+    form {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1); /* Sombra sutil */
+        width: 300px;
+    }
+
+    h1 {
+        text-align: center;
+        color: #333;
+    }
+
+    label {
+        font-weight: bold; /* Texto en negrita para las etiquetas */
+        color: #555;
+    }
+
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="number"] {
+        width: calc(100% - 20px);
+        padding: 10px;
+        margin-top: 5px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="password"]:focus,
+    input[type="number"]:focus {
+        border-color: #0056b3; /* Borde azul cuando el campo está enfocado */
+        outline: none;
+    }
+
+    button {
+        width: 100%;
+        padding: 10px;
+        background-color: #0056b3; /* Botón azul */
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer; /* Cursor de mano al pasar sobre el botón */
+        margin-top: 20px;
+    }
+
+    button:hover {
+        background-color: #004494; /* Botón un poco más oscuro al pasar el mouse */
+    }
+
+    br {
+        display: none; /* Elimina los saltos de línea para un diseño más limpio */
+    }
+

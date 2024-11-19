@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <script>
+        async function login(event) {
+            event.preventDefault();
+
+            // Capturamos los datos del formulario
+            const datos = {
+                usuario: document.getElementById("usuario").value,
+                contraseña: document.getElementById("contraseña").value,
+            };
+
+            try {
+                // Enviamos los datos al servidor
+                const respuesta = await fetch("http://127.0.0.1:5000/login", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify(datos),
+                });
+
+                if (respuesta.ok) {
+                    const resultado = await respuesta.json();
+
+                    // Guardamos la cookie y el usuario en localStorage
+                    localStorage.setItem("usuario", datos.usuario);
+                    localStorage.setItem("cookie", resultado.cookie);
+
+                    // Redirigimos al feed
+                    window.location.href = "feed.html";
+                } else {
+                    alert("Usuario o contraseña incorrectos");
+                }
+            } catch (error) {
+                console.error("Error en el login:", error);
+                alert("Error al conectarse con el servidor");
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>Login</h1>
+    <form onsubmit="login(event)">
+        <label for="usuario">Usuario:</label><br>
+        <input type="text" id="usuario" name="usuario" required><br><br>
+
+        <label for="contraseña">Contraseña:</label><br>
+        <input type="password" id="contraseña" name="contraseña" required><br><br>
+
+        <button type="submit">Ingresar</button>
+    </form>
+</body>
+</html>
