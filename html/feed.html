@@ -227,23 +227,25 @@
                 // Mostrar usuario principal
                 const userDiv = document.getElementById("current-user");
                 userDiv.innerHTML = `
-            <div class="user-card">
-                <div class="circle"></div>
-                <span>${data.currentUser.name} ${data.currentUser.surname} (@${data.currentUser.username})</span>
-            </div>
-        `;
+    <div class="user-card" onclick="goToProfile('${data.currentUser.username}')">
+        <div class="circle"></div>
+        <span>${data.currentUser.name} ${data.currentUser.surname} (@${data.currentUser.username})</span>
+    </div>
+`;
 
-                // Mostrar recomendaciones
+                // Mostrar recomendaciones con botón "Seguir"
                 const recommendationsDiv = document.getElementById("recommendations");
                 recommendationsDiv.innerHTML = "";
                 data.recommendations.forEach(user => {
                     recommendationsDiv.innerHTML += `
-                <div class="user-card" onclick="goToProfile('${user.username}')">
-                    <div class="circle"></div>
-                    <span>${user.name} ${user.surname}</span>
-                </div>
-            `;
+        <div class="user-card">
+            <div class="circle"></div>
+            <span onclick="goToProfile('${user.username}')">${user.name} ${user.surname}</span>
+            <button onclick="followUser('${user.username}')">Seguir</button>
+        </div>
+    `;
                 });
+
             } catch (error) {
                 console.error("Error al cargar el feed:", error);
                 alert("Hubo un problema al cargar el feed.");
@@ -274,7 +276,8 @@
             if (response.ok) {
                 alert("¡Publicación creada con éxito!");
                 document.getElementById("post-content").value = ""; // Limpiar el área de texto
-            
+                location.reload();
+
             } else {
                 alert("Hubo un problema al publicar.");
             }
@@ -316,6 +319,26 @@
         };
 
 
+        async function followUser(username) {
+            const current_user = localStorage.getItem("usuario");
+
+            try {
+                const response = await fetch("http://127.0.0.1:5000/follow", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ current_user, user_to_follow: username })
+                });
+
+                if (response.ok) {
+                    alert("¡Usuario seguido exitosamente!");
+                    // Opcional: Actualiza las recomendaciones o el estado del botón
+                } else {
+                    alert("Hubo un problema al seguir al usuario.");
+                }
+            } catch (error) {
+                console.error("Error al seguir al usuario:", error);
+            }
+        }
 
     </script>
 </head>
@@ -342,6 +365,10 @@
             <div id="posts"></div>
         </div>
     </div>
+    <div id="logout-container" style="text-align: right; margin: 10px;">
+        <button onclick="logout()">Logout</button>
+    </div>
+    
 </body>
 
 </html>

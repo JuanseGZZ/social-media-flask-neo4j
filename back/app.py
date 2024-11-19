@@ -186,11 +186,13 @@ def feed():
             if not current_user:
                 return jsonify({"mensaje": "Usuario no encontrado"}), 404
 
-            # Obtener usuarios genéricos
+            # Obtener usuarios no seguidos
             recommendations = session.run(
                 """
                 MATCH (u:Usuario)
-                WHERE u.usuario <> $user
+                WHERE u.usuario <> $user AND NOT EXISTS {
+                    MATCH (:Usuario {usuario: $user})-[:SIGUE]->(u)
+                }
                 RETURN u.nombre AS name, u.apellido AS surname, u.usuario AS username
                 LIMIT 20
                 """, user=user
@@ -212,6 +214,7 @@ def feed():
     except Exception as e:
         print("Error en /feed:", e)
         return jsonify({"mensaje": "Error al cargar el feed"}), 500
+
 
 
 
@@ -249,17 +252,19 @@ def get_posts():
     user = request.args.get("user")
     try:
         with driver.session() as session:
-            # Obtener posts genéricos
             posts = session.run(
                 """
-                MATCH (u:Usuario)-[:POSTEO]->(p:Post)
+                MATCH (u:Usuario {usuario: $user})-[:POSTEO]->(p:Post)
                 RETURN p.contenido AS content, p.fecha AS date, u.nombre AS author_name, u.apellido AS author_surname, u.usuario AS author_username
-                ORDER BY p.fecha DESC
+                UNION
+                MATCH (:Usuario {usuario: $user})-[:SIGUE]->(followed:Usuario)-[:POSTEO]->(p:Post)
+                RETURN p.contenido AS content, p.fecha AS date, followed.nombre AS author_name, followed.apellido AS author_surname, followed.usuario AS author_username
+                ORDER BY date DESC
                 LIMIT 20
-                """
+                """, user=user
             ).values()
 
-        # Convertir datetime a string y formatear los datos
+        # Formatear los posts
         formatted_posts = [
             {
                 "content": post[0],
@@ -278,6 +283,54 @@ def get_posts():
 
 
 
+@app.route("/profile", methods=["GET"])
+def profile():
+    user = request.args.get("user")
+    try:
+        with driver.session() as session:
+            user_data = session.run(
+                """
+                MATCH (u:Usuario {usuario: $user})
+                RETURN u.nombre AS name, u.apellido AS surname, u.email AS email, u.edad AS age, u.fecha_creacion AS created_at
+                """, user=user
+            ).single()
+
+        if not user_data:
+            return jsonify({"mensaje": "Usuario no encontrado"}), 404
+
+        # No aplicar strftime si el valor ya es un string
+        return jsonify({
+            "name": user_data["name"],
+            "surname": user_data["surname"],
+            "email": user_data["email"],
+            "age": user_data["age"],
+            "created_at": user_data["created_at"]  # Asume que es string
+        })
+    except Exception as e:
+        print("Error en /profile:", e)
+        return jsonify({"mensaje": "Error al cargar el perfil"}), 500
+
+
+
+@app.route("/follow", methods=["POST"])
+def follow():
+    try:
+        data = request.get_json()
+        current_user = data["current_user"]
+        user_to_follow = data["user_to_follow"]
+
+        with driver.session() as session:
+            session.run(
+                """
+                MATCH (u1:Usuario {usuario: $current_user}), (u2:Usuario {usuario: $user_to_follow})
+                CREATE (u1)-[:SIGUE]->(u2)
+                """, current_user=current_user, user_to_follow=user_to_follow
+            )
+
+        return jsonify({"mensaje": "Usuario seguido exitosamente"}), 200
+    except Exception as e:
+        print("Error en /follow:", e)
+        return jsonify({"mensaje": "Error al seguir al usuario"}), 500
 
 
 

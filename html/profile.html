@@ -9,15 +9,21 @@
             const params = new URLSearchParams(window.location.search);
             const username = params.get("user");
 
-            const response = await fetch(`http://127.0.0.1:5000/profile?user=${username}`);
-            const data = await response.json();
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/profile?user=${username}`);
+                if (!response.ok) throw new Error("Error al cargar el perfil");
 
-            document.getElementById("profile").innerHTML = `
-                <h1>${data.name} ${data.surname}</h1>
-                <p>Email: ${data.email}</p>
-                <p>Edad: ${data.age}</p>
-                <p>Miembro desde: ${data.created_at}</p>
-            `;
+                const data = await response.json();
+                document.getElementById("profile").innerHTML = `
+                    <h1>${data.name} ${data.surname}</h1>
+                    <p>Email: ${data.email}</p>
+                    <p>Edad: ${data.age}</p>
+                    <p>Miembro desde: ${data.created_at}</p>
+                `;
+            } catch (error) {
+                console.error("Error al cargar el perfil:", error);
+                alert("Hubo un problema al cargar el perfil.");
+            }
         }
 
         window.onload = loadProfile;
