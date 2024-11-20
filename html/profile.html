@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -67,30 +68,34 @@
     </style>
     <script>
         async function loadProfile() {
-            const params = new URLSearchParams(window.location.search);
-            const username = params.get("user");
+    const params = new URLSearchParams(window.location.search);
+    const username = params.get("user");
 
-            try {
-                // Cargar datos del perfil
-                const response = await fetch(`http://127.0.0.1:5000/profile?user=${username}`);
-                if (!response.ok) throw new Error("Error al cargar el perfil");
+    try {
+        // Cargar datos del perfil
+        const response = await fetch(`http://127.0.0.1:5000/profile?user=${username}`);
+        if (!response.ok) throw new Error("Error al cargar el perfil");
 
-                const data = await response.json();
-                document.getElementById("profile").innerHTML = `
-                    <h1>${data.name} ${data.surname}</h1>
-                    <p>Email: ${data.email}</p>
-                    <p>Edad: ${data.age}</p>
-                    <p>Miembro desde: ${data.created_at}</p>
-                `;
+        const data = await response.json();
+        document.getElementById("profile").innerHTML = `
+            <h1>${data.name} ${data.surname}</h1>
+            <p>Email: ${data.email}</p>
+            <p>Edad: ${data.age}</p>
+            <p>Miembro desde: ${data.created_at}</p>
+        `;
 
-                // Cargar la lista de usuarios seguidos
-                await loadFollowing(username);
+        // Cargar la lista de usuarios seguidos
+        await loadFollowing(username);
 
-            } catch (error) {
-                console.error("Error al cargar el perfil:", error);
-                alert("Hubo un problema al cargar el perfil.");
-            }
-        }
+        // Cargar la lista de seguidores
+        await loadFollowers(username);
+
+    } catch (error) {
+        console.error("Error al cargar el perfil:", error);
+        alert("Hubo un problema al cargar el perfil.");
+    }
+}
+
 
         async function loadFollowing(username) {
             try {
@@ -158,10 +163,35 @@
                 }
             }
         }
+        async function loadFollowers(username) {
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/followers?user=${username}`);
+                if (!response.ok) throw new Error("Error al cargar la lista de seguidores");
+
+                const followers = await response.json();
+
+                // Renderizar la lista de seguidores
+                const followersDiv = document.getElementById("followers");
+                followersDiv.innerHTML = "";
+                followers.forEach(user => {
+                    followersDiv.innerHTML += `
+                <div class="user-card">
+                    <div class="circle"></div>
+                    <span>${user.name} ${user.surname} (@${user.username})</span>
+                </div>
+            `;
+                });
+            } catch (error) {
+                console.error("Error al cargar la lista de seguidores:", error);
+                alert("Hubo un problema al cargar la lista de seguidores.");
+            }
+        }
+
 
         window.onload = loadProfile;
     </script>
 </head>
+
 <body>
     <!-- Información del perfil -->
     <div id="profile"></div>
@@ -171,5 +201,12 @@
         <h3>Siguiendo</h3>
         <div id="following"></div>
     </div>
+    <!-- Lista de seguidores -->
+    <div id="followers-list">
+        <h3>Seguidores</h3>
+        <div id="followers"></div>
+    </div>
+
 </body>
+
 </html>

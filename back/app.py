@@ -278,8 +278,10 @@ def get_posts():
             user_posts = session.run(
                 """
                 MATCH (u:Usuario {usuario: $user})-[:POSTEO]->(p:Post)
+                OPTIONAL MATCH (liker:Usuario)-[:LE_GUSTO]->(p)
                 RETURN p.id AS id, p.contenido AS content, p.fecha AS date, 
-                       u.nombre AS author_name, u.apellido AS author_surname, u.usuario AS author_username
+                       u.nombre AS author_name, u.apellido AS author_surname, u.usuario AS author_username,
+                       COUNT(liker) AS likes, EXISTS((u)-[:LE_GUSTO]->(p)) AS liked
                 """,
                 user=user
             ).values()
@@ -288,8 +290,10 @@ def get_posts():
             followed_posts = session.run(
                 """
                 MATCH (:Usuario {usuario: $user})-[:SIGUE]->(followed:Usuario)-[:POSTEO]->(p:Post)
+                OPTIONAL MATCH (liker:Usuario)-[:LE_GUSTO]->(p)
                 RETURN p.id AS id, p.contenido AS content, p.fecha AS date, 
-                       followed.nombre AS author_name, followed.apellido AS author_surname, followed.usuario AS author_username
+                       followed.nombre AS author_name, followed.apellido AS author_surname, followed.usuario AS author_username,
+                       COUNT(liker) AS likes, EXISTS((:Usuario {usuario: $user})-[:LE_GUSTO]->(p)) AS liked
                 """,
                 user=user
             ).values()
@@ -311,6 +315,8 @@ def get_posts():
                 "author_name": post[3],
                 "author_surname": post[4],
                 "author_username": post[5],
+                "likes": post[6],
+                "liked": post[7],
             }
             for post in all_posts_sorted
         ]
@@ -320,6 +326,8 @@ def get_posts():
     except Exception as e:
         print("Error en /posts:", e)
         return jsonify({"mensaje": "Error al cargar los posts"}), 500
+
+
 
 
 
@@ -445,6 +453,96 @@ def get_following():
     except Exception as e:
         print("Error en /following:", e)
         return jsonify({"mensaje": "Error al cargar la lista de seguidos"}), 500
+
+
+@app.route("/toggle-like", methods=["POST"])
+def toggle_like():
+    try:
+        datos = request.get_json()
+        user = datos["user"]
+        post_id = datos["post_id"]
+
+        with driver.session() as session:
+            # Verificar si ya existe una relación "le_gusto"
+            existing_relationship = session.run(
+                """
+                MATCH (:Usuario {usuario: $user})-[r:LE_GUSTO]->(:Post {id: $post_id})
+                RETURN r
+                """,
+                user=user,
+                post_id=post_id,
+            ).single()
+
+            if existing_relationship:
+                # Si existe, eliminarla (unlike)
+                session.run(
+                    """
+                    MATCH (:Usuario {usuario: $user})-[r:LE_GUSTO]->(:Post {id: $post_id})
+                    DELETE r
+                    """,
+                    user=user,
+                    post_id=post_id,
+                )
+                return jsonify({"message": "Post unliked"}), 200
+            else:
+                # Si no existe, crearla (like)
+                session.run(
+                    """
+                    MATCH (u:Usuario {usuario: $user}), (p:Post {id: $post_id})
+                    CREATE (u)-[:LE_GUSTO]->(p)
+                    """,
+                    user=user,
+                    post_id=post_id,
+                )
+                return jsonify({"message": "Post liked"}), 200
+
+    except Exception as e:
+        print("Error en /toggle-like:", e)
+        return jsonify({"message": "Error al cambiar el estado del like"}), 500
+
+
+@app.route("/followers", methods=["GET"])
+def get_followers():
+    user = request.args.get("user")
+
+    try:
+        with driver.session() as session:
+            # Obtener la lista de seguidores
+            followers = session.run(
+                """
+                MATCH (follower:Usuario)-[:SIGUE]->(:Usuario {usuario: $user})
+                RETURN follower.nombre AS name, follower.apellido AS surname, follower.usuario AS username
+                ORDER BY follower.nombre
+                """,
+                user=user
+            ).values()
+
+        # Formatear los resultados
+        formatted_followers = [
+            {
+                "name": f[0],
+                "surname": f[1],
+                "username": f[2]
+            }
+            for f in followers
+        ]
+
+        return jsonify(formatted_followers), 200
+
+    except Exception as e:
+        print("Error en /followers:", e)
+        return jsonify({"mensaje": "Error al cargar la lista de seguidores"}), 500
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == "__main__":
