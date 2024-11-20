@@ -241,24 +241,26 @@
                 // Mostrar usuario principal
                 const userDiv = document.getElementById("current-user");
                 userDiv.innerHTML = `
-    <div class="user-card" onclick="goToProfile('${data.currentUser.username}')">
-        <div class="circle"></div>
-        <span>${data.currentUser.name} ${data.currentUser.surname} (@${data.currentUser.username})</span>
-    </div>
-`;
+                <div class="user-card" onclick="goToProfile('${data.currentUser.username}')">
+                <div class="circle"></div>
+                <span>${data.currentUser.name} ${data.currentUser.surname} (@${data.currentUser.username})</span>
+                </div>
+                `;
 
                 // Mostrar recomendaciones con botón dinámico
                 const recommendationsDiv = document.getElementById("recommendations");
                 recommendationsDiv.innerHTML = "";
+                
                 data.recommendations.forEach(user => {
                     recommendationsDiv.innerHTML += `
-        <div class="user-card">
-            <div class="circle"></div>
-            <span onclick="goToProfile('${user.username}')">${user.name} ${user.surname}</span>
-            <button id="follow-btn-${user.username}" onclick="toggleFollow('${user.username}', this)">Seguir</button>
-        </div>
-    `;
+                <div class="user-card">
+                <div class="circle"></div>
+                <span onclick="goToProfile('${user.username}')">${user.name} ${user.surname}</span>
+                <button id="follow-btn-${user.username}" onclick="toggleFollow('${user.username}', this)">Seguir</button>
+                </div>
+                `;
                 });
+
 
 
             } catch (error) {
@@ -299,36 +301,35 @@
         }
 
         async function loadPosts() {
-    const username = localStorage.getItem("usuario");
+            const username = localStorage.getItem("usuario");
 
-    try {
-        const response = await fetch(`http://127.0.0.1:5000/posts?user=${username}`);
-        if (!response.ok) throw new Error("Error al cargar los posts");
+            try {
+                const response = await fetch(`http://127.0.0.1:5000/posts?user=${username}`);
+                if (!response.ok) throw new Error("Error al cargar los posts");
 
-        const posts = await response.json(); // Recibimos los datos correctamente desde el backend
+                const posts = await response.json(); // Recibimos los datos correctamente desde el backend
 
-        // Renderizar los posts
-        const postsDiv = document.getElementById("posts");
-        postsDiv.innerHTML = ""; // Limpiar el contenido previo
-        posts.forEach(post => {
-            postsDiv.innerHTML += `
+                // Renderizar los posts
+                const postsDiv = document.getElementById("posts");
+                postsDiv.innerHTML = ""; // Limpiar el contenido previo
+                posts.forEach(post => {
+                    postsDiv.innerHTML += `
                 <div class="post-card">
                     <strong>${post.author_name} ${post.author_surname} (@${post.author_username}):</strong>
                     <p>${post.content}</p>
                     <small>${post.date}</small>
-                    ${
-                        post.author_username === username
+                    ${post.author_username === username
                             ? `<button class="delete-btn" onclick="deletePost('${post.id}')">✖</button>`
                             : ""
-                    }
+                        }
                 </div>
             `;
-        });
-    } catch (error) {
-        console.error("Error al cargar los posts:", error);
-        alert("Hubo un problema al cargar los posts.");
-    }
-}
+                });
+            } catch (error) {
+                console.error("Error al cargar los posts:", error);
+                alert("Hubo un problema al cargar los posts.");
+            }
+        }
 
 
 

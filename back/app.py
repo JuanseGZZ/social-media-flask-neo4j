@@ -175,7 +175,7 @@ def feed():
     user = request.args.get("user")
     try:
         with driver.session() as session:
-            # Obtener datos del usuario actual
+            # Get current user data
             current_user = session.run(
                 """
                 MATCH (u:Usuario {usuario: $user})
@@ -186,23 +186,43 @@ def feed():
             if not current_user:
                 return jsonify({"mensaje": "Usuario no encontrado"}), 404
 
-            # Obtener usuarios no seguidos
-            recommendations = session.run(
+            # Check if the user follows anyone
+            follows_anyone = session.run(
                 """
-                MATCH (u:Usuario)
-                WHERE u.usuario <> $user AND NOT EXISTS {
-                    MATCH (:Usuario {usuario: $user})-[:SIGUE]->(u)
-                }
-                RETURN u.nombre AS name, u.apellido AS surname, u.usuario AS username
-                LIMIT 20
+                MATCH (:Usuario {usuario: $user})-[:SIGUE]->(:Usuario)
+                RETURN COUNT(*) > 0 AS follows
                 """, user=user
-            ).values()
+            ).single()["follows"]
 
-        # Formatear las recomendaciones
+            if follows_anyone:
+                # Get "friends of friends" recommendations
+                recommendations = session.run(
+                    """
+                    MATCH (:Usuario {usuario: $user})-[:SIGUE]->(friend:Usuario)-[:SIGUE]->(fof:Usuario)
+                    WHERE fof.usuario <> $user AND NOT EXISTS {
+                        MATCH (:Usuario {usuario: $user})-[:SIGUE]->(fof)
+                    }
+                    RETURN DISTINCT fof.nombre AS name, fof.apellido AS surname, fof.usuario AS username
+                    LIMIT 10
+                    """, user=user
+                ).values()
+            else:
+                # Get the first 20 users for new users
+                recommendations = session.run(
+                    """
+                    MATCH (u:Usuario)
+                    WHERE u.usuario <> $user
+                    RETURN u.nombre AS name, u.apellido AS surname, u.usuario AS username
+                    LIMIT 20
+                    """, user=user
+                ).values()
+
+        # Format the recommendations
         formatted_recommendations = [
             {"name": rec[0], "surname": rec[1], "username": rec[2]} for rec in recommendations
         ]
 
+        # Return user and recommendations
         return jsonify({
             "currentUser": {
                 "name": current_user["name"],
@@ -214,6 +234,7 @@ def feed():
     except Exception as e:
         print("Error en /feed:", e)
         return jsonify({"mensaje": "Error al cargar el feed"}), 500
+
 
 
 
