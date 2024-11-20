@@ -305,11 +305,11 @@
         const response = await fetch(`http://127.0.0.1:5000/posts?user=${username}`);
         if (!response.ok) throw new Error("Error al cargar los posts");
 
-        const posts = await response.json(); // Asegúrate de que aquí recibes `id`
+        const posts = await response.json(); // Recibimos los datos correctamente desde el backend
 
         // Renderizar los posts
         const postsDiv = document.getElementById("posts");
-        postsDiv.innerHTML = "";
+        postsDiv.innerHTML = ""; // Limpiar el contenido previo
         posts.forEach(post => {
             postsDiv.innerHTML += `
                 <div class="post-card">
@@ -329,6 +329,7 @@
         alert("Hubo un problema al cargar los posts.");
     }
 }
+
 
 
 

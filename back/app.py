@@ -249,40 +249,52 @@ from datetime import datetime
 
 @app.route("/posts", methods=["GET"])
 def get_posts():
-    user = request.args.get("user")  # Usuario actual
+    user = request.args.get("user")
+
     try:
         with driver.session() as session:
-            # Consulta para obtener los posts del usuario logueado y los de los usuarios que sigue
-            posts = session.run(
+            # Obtener los posts del usuario
+            user_posts = session.run(
                 """
                 MATCH (u:Usuario {usuario: $user})-[:POSTEO]->(p:Post)
-                RETURN p.id AS id, p.contenido AS content, p.fecha AS date,
+                RETURN p.id AS id, p.contenido AS content, p.fecha AS date, 
                        u.nombre AS author_name, u.apellido AS author_surname, u.usuario AS author_username
-                UNION
-                MATCH (:Usuario {usuario: $user})-[:SIGUE]->(followed:Usuario)-[:POSTEO]->(p:Post)
-                RETURN p.id AS id, p.contenido AS content, p.fecha AS date,
-                       followed.nombre AS author_name, followed.apellido AS author_surname, followed.usuario AS author_username
-                ORDER BY date DESC
-                LIMIT 20
                 """,
                 user=user
             ).values()
 
-        # Formatear los resultados para incluir el campo `id`
+            # Obtener los posts de las personas que sigue
+            followed_posts = session.run(
+                """
+                MATCH (:Usuario {usuario: $user})-[:SIGUE]->(followed:Usuario)-[:POSTEO]->(p:Post)
+                RETURN p.id AS id, p.contenido AS content, p.fecha AS date, 
+                       followed.nombre AS author_name, followed.apellido AS author_surname, followed.usuario AS author_username
+                """,
+                user=user
+            ).values()
+
+        # Combinar y ordenar los posts
+        all_posts = user_posts + followed_posts
+        all_posts_sorted = sorted(
+            all_posts,
+            key=lambda post: post[2],  # Ordenar por fecha (índice 2: `p.fecha`)
+            reverse=True  # Descendente
+        )
+
+        # Formatear los posts para enviarlos al frontend
         formatted_posts = [
             {
-                "id": post[0],  # El primer índice corresponde al campo `p.id`
+                "id": post[0],
                 "content": post[1],
                 "date": post[2].strftime("%Y-%m-%d %H:%M:%S") if post[2] else None,
                 "author_name": post[3],
                 "author_surname": post[4],
-                "author_username": post[5]
+                "author_username": post[5],
             }
-            for post in posts
+            for post in all_posts_sorted
         ]
 
-        # Retornar los posts en formato JSON
-        return jsonify(formatted_posts)
+        return jsonify(formatted_posts), 200
 
     except Exception as e:
         print("Error en /posts:", e)
@@ -380,6 +392,38 @@ def delete_post():
         print("Error en /delete_post:", e)
         return jsonify({"mensaje": "Error al eliminar el post"}), 500
 
+
+@app.route("/following", methods=["GET"])
+def get_following():
+    user = request.args.get("user")  # Usuario actual
+
+    try:
+        with driver.session() as session:
+            # Obtener la lista de usuarios seguidos
+            following = session.run(
+                """
+                MATCH (:Usuario {usuario: $user})-[:SIGUE]->(followed:Usuario)
+                RETURN followed.nombre AS name, followed.apellido AS surname, followed.usuario AS username
+                ORDER BY followed.nombre
+                """,
+                user=user
+            ).values()
+
+        # Formatear los resultados
+        formatted_following = [
+            {
+                "name": f[0],
+                "surname": f[1],
+                "username": f[2]
+            }
+            for f in following
+        ]
+
+        return jsonify(formatted_following)
+
+    except Exception as e:
+        print("Error en /following:", e)
+        return jsonify({"mensaje": "Error al cargar la lista de seguidos"}), 500
 
 
 if __name__ == "__main__":
