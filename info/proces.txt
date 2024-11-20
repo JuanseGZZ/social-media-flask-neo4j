@@ -1,4 +1,0 @@
-red social nodo db sra ->
-
-nodo Usuario
--

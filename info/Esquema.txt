@@ -1,0 +1,30 @@
+Nodos:
+-posteos
+-usuarios
+-cookies de sesion
+
+Conecciones:
+-sigue
+-posteo
+-le_gusto
+
+
+Funciones: 
+-Registrarse
+-Loguearse
+-Postear
+-EliminarPost
+-Like
+-Unlike
+-Recomendados [as new, whit followings]
+-Followers
+-Following
+-Follow
+-Unfollow
+
+
+
+Falta Agregar
+-> buscar User
+-> comentar Posts ( relaccion comento con un atriburo texto y fecha adentro )
+{(:Usuario)-[:COMENTO {texto: "Este es el comentario", fecha: "2024-11-20T21:00:00"}]->(:Post)}
