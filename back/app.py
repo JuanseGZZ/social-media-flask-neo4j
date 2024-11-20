@@ -249,38 +249,44 @@ from datetime import datetime
 
 @app.route("/posts", methods=["GET"])
 def get_posts():
-    user = request.args.get("user")
+    user = request.args.get("user")  # Usuario actual
     try:
         with driver.session() as session:
+            # Consulta para obtener los posts del usuario logueado y los de los usuarios que sigue
             posts = session.run(
                 """
-                MATCH (u:Usuario)-[:POSTEO]->(p:Post)
-                WHERE u.usuario = $user OR EXISTS {
-                    MATCH (:Usuario {usuario: $user})-[:SIGUE]->(u)
-                }
-                RETURN p.contenido AS content, p.fecha AS date, u.nombre AS author_name, u.apellido AS author_surname, u.usuario AS author_username
-                ORDER BY p.fecha DESC
+                MATCH (u:Usuario {usuario: $user})-[:POSTEO]->(p:Post)
+                RETURN p.id AS id, p.contenido AS content, p.fecha AS date,
+                       u.nombre AS author_name, u.apellido AS author_surname, u.usuario AS author_username
+                UNION
+                MATCH (:Usuario {usuario: $user})-[:SIGUE]->(followed:Usuario)-[:POSTEO]->(p:Post)
+                RETURN p.id AS id, p.contenido AS content, p.fecha AS date,
+                       followed.nombre AS author_name, followed.apellido AS author_surname, followed.usuario AS author_username
+                ORDER BY date DESC
                 LIMIT 20
-                """, user=user
+                """,
+                user=user
             ).values()
 
-        # Formatear los posts
+        # Formatear los resultados para incluir el campo `id`
         formatted_posts = [
             {
-                "content": post[0],
-                "date": post[1].strftime("%Y-%m-%d %H:%M:%S") if post[1] else None,
-                "author_name": post[2],
-                "author_surname": post[3],
-                "author_username": post[4]
+                "id": post[0],  # El primer índice corresponde al campo `p.id`
+                "content": post[1],
+                "date": post[2].strftime("%Y-%m-%d %H:%M:%S") if post[2] else None,
+                "author_name": post[3],
+                "author_surname": post[4],
+                "author_username": post[5]
             }
             for post in posts
         ]
 
+        # Retornar los posts en formato JSON
         return jsonify(formatted_posts)
+
     except Exception as e:
         print("Error en /posts:", e)
         return jsonify({"mensaje": "Error al cargar los posts"}), 500
-
 
 
 
@@ -312,7 +318,6 @@ def profile():
         return jsonify({"mensaje": "Error al cargar el perfil"}), 500
 
 
-
 @app.route("/follow", methods=["POST"])
 def follow():
     try:
@@ -333,6 +338,7 @@ def follow():
         print("Error en /follow:", e)
         return jsonify({"mensaje": "Error al seguir al usuario"}), 500
 
+
 @app.route("/unfollow", methods=["POST"])
 def unfollow():
     try:
@@ -352,6 +358,28 @@ def unfollow():
     except Exception as e:
         print("Error en /unfollow:", e)
         return jsonify({"mensaje": "Error al dejar de seguir al usuario"}), 500
+
+
+@app.route("/delete_post", methods=["POST"])
+def delete_post():
+    try:
+        data = request.get_json()
+        post_id = data["post_id"]  # Asegúrate de que este campo coincide con el que envías desde el frontend.
+
+        with driver.session() as session:
+            session.run(
+                """
+                MATCH (p:Post {id: $post_id})
+                DETACH DELETE p
+                """,
+                post_id=post_id
+            )
+
+        return jsonify({"mensaje": "Post eliminado correctamente"}), 200
+    except Exception as e:
+        print("Error en /delete_post:", e)
+        return jsonify({"mensaje": "Error al eliminar el post"}), 500
+
 
 
 if __name__ == "__main__":
