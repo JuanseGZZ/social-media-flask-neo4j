@@ -254,12 +254,12 @@ def get_posts():
         with driver.session() as session:
             posts = session.run(
                 """
-                MATCH (u:Usuario {usuario: $user})-[:POSTEO]->(p:Post)
+                MATCH (u:Usuario)-[:POSTEO]->(p:Post)
+                WHERE u.usuario = $user OR EXISTS {
+                    MATCH (:Usuario {usuario: $user})-[:SIGUE]->(u)
+                }
                 RETURN p.contenido AS content, p.fecha AS date, u.nombre AS author_name, u.apellido AS author_surname, u.usuario AS author_username
-                UNION
-                MATCH (:Usuario {usuario: $user})-[:SIGUE]->(followed:Usuario)-[:POSTEO]->(p:Post)
-                RETURN p.contenido AS content, p.fecha AS date, followed.nombre AS author_name, followed.apellido AS author_surname, followed.usuario AS author_username
-                ORDER BY date DESC
+                ORDER BY p.fecha DESC
                 LIMIT 20
                 """, user=user
             ).values()
@@ -280,6 +280,7 @@ def get_posts():
     except Exception as e:
         print("Error en /posts:", e)
         return jsonify({"mensaje": "Error al cargar los posts"}), 500
+
 
 
 
@@ -332,6 +333,25 @@ def follow():
         print("Error en /follow:", e)
         return jsonify({"mensaje": "Error al seguir al usuario"}), 500
 
+@app.route("/unfollow", methods=["POST"])
+def unfollow():
+    try:
+        data = request.get_json()
+        current_user = data["current_user"]
+        user_to_unfollow = data["user_to_unfollow"]
+
+        with driver.session() as session:
+            session.run(
+                """
+                MATCH (:Usuario {usuario: $current_user})-[rel:SIGUE]->(:Usuario {usuario: $user_to_unfollow})
+                DELETE rel
+                """, current_user=current_user, user_to_unfollow=user_to_unfollow
+            )
+
+        return jsonify({"mensaje": "Usuario dejado de seguir exitosamente"}), 200
+    except Exception as e:
+        print("Error en /unfollow:", e)
+        return jsonify({"mensaje": "Error al dejar de seguir al usuario"}), 500
 
 
 if __name__ == "__main__":
