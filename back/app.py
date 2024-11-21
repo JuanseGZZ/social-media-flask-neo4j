@@ -534,6 +534,127 @@ def get_followers():
         return jsonify({"mensaje": "Error al cargar la lista de seguidores"}), 500
 
 
+@app.route("/comment", methods=["POST"])
+def comment_post():
+    data = request.get_json()
+    user = data.get("user")
+    post_id = data.get("post_id")
+    comment_text = data.get("comment")
+
+    try:
+        with driver.session() as session:
+            # Crear la relación COMENTO con el texto del comentario
+            session.run(
+                """
+                MATCH (u:Usuario {usuario: $user}), (p:Post {id: $post_id})
+                CREATE (u)-[:COMENTO {texto: $comment, fecha: datetime()}]->(p)
+                """,
+                user=user,
+                post_id=post_id,
+                comment=comment_text
+            )
+        return jsonify({"mensaje": "Comentario agregado exitosamente"}), 201
+    except Exception as e:
+        print("Error en /comment:", e)
+        return jsonify({"mensaje": "Error al agregar el comentario"}), 500
+
+
+@app.route("/comments", methods=["GET"])
+def get_comments():
+    post_id = request.args.get("post_id")
+
+    try:
+        with driver.session() as session:
+            # Obtener todos los comentarios del post
+            comments = session.run(
+                """
+                MATCH (u:Usuario)-[c:COMENTO]->(p:Post {id: $post_id})
+                RETURN u.nombre AS author_name, u.apellido AS author_surname, u.usuario AS author_username, 
+                       c.texto AS text, c.fecha AS date
+                ORDER BY c.fecha ASC
+                """,
+                post_id=post_id
+            ).values()
+
+        # Formatear los comentarios
+        formatted_comments = [
+            {
+                "author_name": comment[0],
+                "author_surname": comment[1],
+                "author_username": comment[2],
+                "text": comment[3],
+                "date": comment[4].strftime("%Y-%m-%d %H:%M:%S") if comment[4] else None
+            }
+            for comment in comments
+        ]
+
+        return jsonify(formatted_comments), 200
+    except Exception as e:
+        print("Error en /comments:", e)
+        return jsonify({"mensaje": "Error al cargar los comentarios"}), 500
+
+
+
+@app.route("/delete_comment", methods=["POST"])
+def delete_comment():
+    data = request.get_json()
+    user = data.get("user")
+    post_id = data.get("post_id")
+    comment_text = data.get("comment_text")
+
+    try:
+        with driver.session() as session:
+            # Eliminar la relación `COMENTO` basada en el usuario, post y texto del comentario
+            session.run(
+                """
+                MATCH (:Usuario {usuario: $user})-[c:COMENTO {texto: $comment_text}]->(:Post {id: $post_id})
+                DELETE c
+                """,
+                user=user,
+                comment_text=comment_text,
+                post_id=post_id
+            )
+        return jsonify({"mensaje": "Comentario eliminado exitosamente"}), 200
+    except Exception as e:
+        print("Error en /delete_comment:", e)
+        return jsonify({"mensaje": "Error al eliminar el comentario"}), 500
+
+
+
+@app.route("/search_users", methods=["GET"])
+def search_users():
+    user_input = request.args.get("query", "").lower()
+    current_user = request.args.get("current_user")
+    try:
+        print(f"Endpoint /search_users llamado con query: {user_input}")
+        with driver.session() as session:
+            results = session.run(
+                """
+                MATCH (u:Usuario)
+                WHERE toLower(u.usuario) CONTAINS toLower($input)
+                OPTIONAL MATCH (:Usuario {usuario: $current_user})-[:SIGUE]->(u)
+                RETURN u.nombre AS name, u.apellido AS surname, u.usuario AS username,
+                       CASE WHEN EXISTS((:Usuario {usuario: $current_user})-[:SIGUE]->(u)) THEN true ELSE false END AS is_following
+                LIMIT 5
+                """,
+                input=user_input,
+                current_user=current_user
+            ).values()
+
+        print("Resultados crudos de la base de datos:", results)
+
+        users = [
+            {"name": result[0], "surname": result[1], "username": result[2], "is_following": result[3]}
+            for result in results
+        ]
+
+        print("Resultados formateados para el frontend:", users)
+        return jsonify(users), 200
+
+    except Exception as e:
+        print("Error en /search_users:", e)
+        return jsonify({"mensaje": "Error al buscar usuarios"}), 500
+
 
 
 
