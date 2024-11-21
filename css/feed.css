@@ -290,3 +290,24 @@ button[type="submit"]:hover {
 .search-result button:hover {
     background-color: #0056b3;
 }
+
+#user-search-input {
+    width: 98%; /* Ajusta según el diseño */
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #ccc;
+    border-radius: 20px; /* Bordes redondeados */
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1); /* Sombra */
+    outline: none; /* Quita el borde azul al hacer clic */
+    transition: all 0.3s ease; /* Transición para efectos */
+}
+
+#user-search-input:focus {
+    border-color: #007bff; /* Cambia el color del borde al enfocarse */
+    box-shadow: 0px 4px 8px rgba(0, 123, 255, 0.3); /* Sombra más intensa */
+    background-color: #f9f9f9; /* Color de fondo al enfocarse */
+}
+
+#search-results {
+    margin-top: 10px; /* Para separar los resultados */
+}

@@ -24,9 +24,9 @@ Funciones:
 -comentar Posts ( relaccion comento con un atriburo texto y fecha adentro )
  >{(:Usuario)-[:COMENTO {texto: "Este es el comentario", fecha: "2024-11-20T21:00:00"}]->(:Post)}
 -eliminarComentario
+-buscar User
 
 
 Falta Agregar
--> buscar User
 -> bentchmarck
 -> arreglar recomendados
