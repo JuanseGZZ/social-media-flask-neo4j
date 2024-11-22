@@ -9,9 +9,9 @@ app = Flask(__name__)
 CORS(app)
 
 # Configuración de Neo4j
-uri = "bolt://192.168.1.34:7687"
+uri = "bolt://149.50.146.78:7687"
 username = "neo4j"
-password = "touch-nice-joker-tape-junior-9975"
+password = "p9JS4AdHfdj23ie"
 driver = GraphDatabase.driver(uri, auth=(username, password))
 
 
@@ -21,17 +21,17 @@ def login():
         # Datos del login
         datos = request.get_json()
         usuario = datos["usuario"]
-        contraseña = datos["contraseña"]
+        contrasena = datos["contrasena"]
 
         # Verificar usuario en la base de datos
         with driver.session() as session:
             resultado = session.run(
                 """
-                MATCH (u:Usuario {usuario: $usuario, contraseña: $contraseña})
+                MATCH (u:Usuario {usuario: $usuario, contrasena: $contrasena})
                 RETURN u
                 """,
                 usuario=usuario,
-                contraseña=contraseña
+                contrasena=contrasena
             )
 
             usuario_db = resultado.single()
@@ -59,7 +59,7 @@ def login():
             # Devolver cookie al frontend
             return jsonify({"cookie": cookie}), 200
         else:
-            return jsonify({"mensaje": "Usuario o contraseña incorrectos"}), 401
+            return jsonify({"mensaje": "Usuario o contrasena incorrectos"}), 401
     except Exception as e:
         print("Error:", e)
         return jsonify({"mensaje": "Error en el servidor"}), 500
@@ -129,7 +129,7 @@ def register():
         apellido = datos["apellido"]
         usuario = datos["usuario"]
         email = datos["email"]
-        contraseña = datos["contraseña"]
+        contrasena = datos["contrasena"]
         edad = int(datos["edad"])
         fecha_creacion = datetime.now().isoformat()  # Fecha de creación
 
@@ -146,7 +146,7 @@ def register():
                     apellido: $apellido,
                     usuario: $usuario,
                     email: $email,
-                    contraseña: $contraseña,
+                    contrasena: $contrasena,
                     fecha_creacion: $fecha_creacion,
                     edad: $edad
                 })
@@ -156,7 +156,7 @@ def register():
                 apellido=apellido,
                 usuario=usuario,
                 email=email,
-                contraseña=contraseña,
+                contrasena=contrasena,
                 fecha_creacion=fecha_creacion,
                 edad=edad
             )

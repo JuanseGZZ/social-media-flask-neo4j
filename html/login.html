@@ -12,7 +12,7 @@
             // Capturamos los datos del formulario
             const datos = {
                 usuario: document.getElementById("usuario").value,
-                contraseña: document.getElementById("contraseña").value,
+                contrasena: document.getElementById("contrasena").value,
             };
 
             try {
@@ -35,7 +35,7 @@
                     // Redirigimos al feed
                     window.location.href = "feed.html";
                 } else {
-                    alert("Usuario o contraseña incorrectos");
+                    alert("Usuario o contrasena incorrectos");
                 }
             } catch (error) {
                 console.error("Error en el login:", error);
@@ -50,10 +50,11 @@
         <label for="usuario">Usuario:</label><br>
         <input type="text" id="usuario" name="usuario" required><br><br>
 
-        <label for="contraseña">Contraseña:</label><br>
-        <input type="password" id="contraseña" name="contraseña" required><br><br>
+        <label for="contrasena">Contrasena:</label><br>
+        <input type="password" id="contrasena" name="contrasena" required><br><br>
 
         <button type="submit">Ingresar</button>
     </form>
+    <a href="./register.html">Registrate si no lo estas</a>
 </body>
 </html>
